@@ -4,7 +4,9 @@
 require("dotenv").config({path: "../.env"})
 const axios = require("axios")
 const axios2 = require("axios")
-const {Team, Project, Asset} = require("./schemas.js")
+const {Team, Project, Asset, Comment} = require("./schemas.js")
+const Logger = require("@ryanforever/logger").v2
+
 
 
 
@@ -18,6 +20,9 @@ const {Team, Project, Asset} = require("./schemas.js")
 class Frameio {
 	constructor(config = {}) {
 
+		let debug
+		if (!config.debug) debug = false
+		const logger = new Logger("frame.io", {debug})
 		const token = config.token
 		this.token = config.token
 		this.teamId = config.teamId
@@ -37,12 +42,14 @@ class Frameio {
 		}
 
 		this.getMe = async function() {
+			logger.debug("getting me...")
 			let res = await axios.get("/me").catch(error)
 			let data = res.data
 			return data
 		}
 
 		this.getTeams = async function() {
+			logger.debug("getting teams...")
 			let res = await axios.get("/teams").catch(error)
 			let data = res.data
 			// console.log(data[0])
@@ -51,6 +58,7 @@ class Frameio {
 		}
 
 		this.getProjects = async function(teamId, config = {}) {
+			logger.debug("getting projects...")
 			teamId = teamId || this.teamId
 			let req = {
 				url: `/teams/${teamId}/projects`,
@@ -62,12 +70,13 @@ class Frameio {
 
 			let res = await axios(req).catch(error)
 			let data = res.data
-			console.log(data)
+
 			data = data.map(x => new Project(x))
-			console.log(data)
+			return data
 		}
 
 		this.getProject = async function(projectId) {
+			logger.debug(`getting project ${projectId}...`)
 			projectId = projectId || this.projectId
 			if (!projectId) throw new Error("MISSING_PROJECT_ID")
 			let url = `/projects/${projectId}`
@@ -79,25 +88,18 @@ class Frameio {
 
 		}
 
-		this.getRoot = async function(config = {}) {
-			let project = await this.getProject()
-			let rootAssetId = project.rootAssetId
-
-			let req = {
-				url: `/assets/${rootAssetId}/children`,
-				method: "GET",
-				// params: {
-				// 	type: ["folder", "file"]
-				// }
-			}
-
-			let res = await axios(req).catch(error)
-			let data = res.data
-			data = data.map(x => new Asset(x))
-			console.log(data)
+		this.getAsset = async function(assetId) {
+			logger.debug(`getting asset ${assetId}...`)
+			if (!assetId) throw new Error("MISSING_ASSET_ID")
+			let url = `assets/${assetId}`
+			let res = await axios.get(url).catch(error)
+			let raw = res.data
+			let data = new Asset(raw)
+			return data
 		}
 
 		this.search = async function(query, filter = {}) {
+			logger.debug(`searching...`)
 			let req = {
 				url: "/search/assets",
 				method: "GET",
@@ -113,23 +115,54 @@ class Frameio {
 			let res = await axios(req).catch(error)
 			let data = res.data
 			data = data.map(x => new Asset(x))
-			console.log(data)
+			return data
 		}
 
+		this.getRoot = async function(config = {}) {
+			logger.debug("getting root...")
+			let project = await this.getProject()
+			let rootAssetId = project.rootAssetId
 
-		this.getAsset = async function(assetId) {
-			if (!assetId) throw new Error("MISSING_ASSET_ID")
-			let url = `assets/${assetId}`
-			let res = await axios.get(url).catch(error)
-			let raw = res.data
-			let data = new Asset(raw)
-			// console.log(data.raw)
+			let req = {
+				url: `/assets/${rootAssetId}/children`,
+				method: "GET",
+				// params: {
+				// 	type: ["folder", "file"]
+				// }
+			}
+
+			let res = await axios(req).catch(error)
+			let data = res.data
+			data = data.map(x => new Asset(x))
 			return data
 		}
 
 
+		this.getComment = async function(commentId) {
+			logger.debug("getting comment...")
+			if (!commentId) throw new ERROR("MISSING_COMMENT_ID")
 
+			let res = await axios.get(`/comments/${commentId}`)
+			let raw = res.data
 
+			let data = new Comment(raw)
+			return data
+		}
+
+		this.getCommentAsset = async function(commentId) {
+			logger.debug("getting comment and asset...")
+			if (!commentId) throw new ERROR("MISSING_COMMENT_ID")
+
+			let comment = await this.getComment(commentId)
+			let asset = await this.getAsset(comment.assetId)
+			console.log(asset.raw)
+			let output = {comment, asset}
+			return output
+		}
+
+		
+
+		
 
 
 		function error(err) {

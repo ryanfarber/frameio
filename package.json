@@ -1,6 +1,6 @@
 {
   "name": "@ryanforever/frameio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "frame.io API",
   "main": "index.js",
   "scripts": {
@@ -13,11 +13,14 @@
   "author": "ryan forever",
   "license": "ISC",
   "dependencies": {
+    "@ryanforever/logger": "^5.0.2",
     "axios": "^1.2.1",
     "humanize-duration": "^3.27.3"
   },
   "devDependencies": {
     "dotenv": "^16.0.3"
   },
-  "files": ["src"]
+  "files": [
+    "src"
+  ]
 }

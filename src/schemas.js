@@ -94,6 +94,35 @@ class Asset extends Schema {
 }
 
 
+class Comment extends Schema {
+	constructor(raw = {}) {
+		super(raw)
+
+		let username
+		let userEmail
+		let userId
+
+		if (raw.anonymous_user) {
+			username = raw.anonymous_user.name
+			userEmail = raw.anonymous_user.email
+			userId = raw.anonymous_user.id
+		} else if (raw.owner) {
+			username = raw.owner.name
+			userEmail = raw.owner.email
+			userId = raw.owner.id
+		}
+
+		this.text = raw.text
+		this.username = username
+		this.userId = userId
+		this.userEmail = userEmail
+		this.completed = raw.completed
+		this.frame = raw.frame
+		this.timestamp = this.calculateDuration(raw.timestamp)
+		this.assetId = raw.asset_id
+		this.commentId = raw.id
+	}
+}
 
 
 
@@ -102,4 +131,6 @@ class Asset extends Schema {
 
 
 
-module.exports = {Team, Project, Asset}
+
+
+module.exports = {Team, Project, Asset, Comment}
